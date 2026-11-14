@@ -519,16 +519,21 @@ def parse_raw_keys(keys_raw: str) -> list:
         r"\1\2\3\4",
         keys_raw,
     )
-    tokens = cleaned.replace("\r", "\n").split()
+    tokens = [tok.strip() for tok in cleaned.replace("\r", "\n").split() if tok.strip()]
+    is_numbered_list = len(tokens) >= 2 and bool(
+        re.match(r"^1[\.\)\-\:]", tokens[0]) and re.match(r"^2[\.\)\-\:]", tokens[1])
+    )
     parsed = []
-    for tok in tokens:
-        t = tok.strip()
-        if not t:
-            continue
-        # Boshidagi savol raqamini olib tashlash: '1.A' -> 'A', '12)B' -> 'B', lekin '2.5' yoki '10' ga tegmaslik!
-        m = re.match(r"^\d+[\.\)\-]([A-Za-z].*)$", t)
-        if m:
-            t = m.group(1)
+    for idx, t in enumerate(tokens, 1):
+        # 1) Agar ro'yxat ketma-ket raqamlangan bo'lsa (1.A 2.B ... 36.12,5), mos savol raqamini olib tashlaymiz
+        if is_numbered_list:
+            m_seq = re.match(rf"^{idx}[\.\)\-\:](.+)$", t)
+            if m_seq:
+                t = m_seq.group(1)
+        # 2) Harfli javob oldidagi raqam ('1.A', '12)B') yoki ')' / ':' bilan ajratilgan raqam ('36)12.5')
+        m_gen = re.match(r"^\d+(?:[\)\:](.+)|[\.\-]([A-Za-z].*))$", t)
+        if m_gen:
+            t = m_gen.group(1) or m_gen.group(2)
         parsed.append(normalize_answer(t))
     return parsed
 
