@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lochin Math — Test Tizimi</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --btn-dark: #1e293b;
+            --btn-selected: #2563eb;
+            --btn-selected-glow: rgba(37, 99, 235, 0.35);
+            --btn-success: #16a34a;
+            --btn-danger: #ef4444;
+            --num-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding-bottom: 105px;
+            user-select: none;
+        }
+
+        /* HEADER */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px 12px;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 900;
+            font-size: 15px;
+            color: #0f172a;
+            letter-spacing: 0.4px;
+        }
+
+        .brand-badge {
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .chip-btn {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .chip-btn.active {
+            background: #eff6ff;
+            border-color: #2563eb;
+            color: #1d4ed8;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #1e293b;
+        }
+
+        .progress-bar {
+            height: 7px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2563eb, #10b981);
+            transition: width 0.25s ease;
+        }
+
+        /* ADMIN PANEL */
+        #admin-panel {
+            max-width: 440px;
+            margin: 80px auto 20px;
+            padding: 24px 20px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            display: none;
+            text-align: center;
+        }
+
+        .admin-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #0f172a;
+        }
+
+        .admin-field {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .admin-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .admin-input, .admin-select {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
+            border: 2px solid #cbd5e1;
+            outline: none;
+            color: #0f172a;
+            background: #f8fafc;
+        }
+
+        .admin-input:focus, .admin-select:focus {
+            border-color: var(--btn-selected);
+            background: #fff;
+        }
+
+        .preset-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .preset-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .admin-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 14px;
+            background: var(--btn-selected);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        /* QUESTIONS CONTAINER */
+        #container {
+            padding: 14px;
+            margin-top: 96px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-divider {
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin: 14px 4px 8px;
+        }
+
+        .question-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease, transform 0.15s ease;
+        }
+
+        .question-card.answered {
+            border-color: rgba(37, 99, 235, 0.25);
+        }
+
+        .question-card.highlight-missing {
+            border-color: var(--btn-danger);
+        }
+
+        .q-num {
+            background: var(--num-bg);
+            color: #1e293b;
+            font-weight: 900;
+            font-size: 15px;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .question-card.answered .q-num {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .options {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .option-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--btn-dark);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            font-size: 14px;
+        }
+
+        .option-btn:active {
+            transform: scale(0.93);
+        }
+
+        .option-btn.selected {
+            background-color: var(--btn-selected);
+            box-shadow: 0 3px 10px var(--btn-selected-glow);
+            color: #fff;
+        }
+
+        /* WRITTEN & DOUBLE INPUTS */
+        .input-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 15px;
+            font-weight: 700;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            text-transform: uppercase;
+            background: #f8fafc;
+            color: #0f172a;
+            outline: none;
+            text-align: center;
+            transition: border-color 0.15s ease;
+        }
+
+        .text-input:focus {
+            border-color: var(--btn-selected);
+            background: #ffffff;
+        }
+
+        .double-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .double-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .double-label {
+            font-weight: 900;
+            color: var(--btn-selected);
+            font-size: 15px;
+            width: 22px;
+            flex-shrink: 0;
+        }
+
+        .math-helper {
+            display: flex;
+            gap: 5px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .math-key {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .math-key:active {
+            background: #e2e8f0;
+        }
+
+        /* FOOTER */
+        .footer {
+            position: fixed;
+            bottom: 14px;
+            left: 14px;
+            right: 14px;
+            max-width: 600px;
+            margin: 0 auto;
+            z-index: 101;
+        }
+
+        #submitBtn {
+            width: 100%;
+            padding: 15px;
+            background: var(--btn-success);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.4);
+            display: none;
+        }
+
+        #submitBtn:active {
+            transform: scale(0.98);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header" id="header-bar">
+        <div class="header-top">
+            <div class="brand">
+                <span>🦅 LOCHIN MATH</span>
+                <span class="brand-badge" id="mode-badge">RASH</span>
+            </div>
+            <div class="header-actions">
+                <button class="chip-btn" id="filter-btn" onclick="toggleFilterUnanswered()">Qolganlar</button>
+                <button class="chip-btn" onclick="clearAllAnswers()">Tozalash</button>
+            </div>
+        </div>
+        <div class="progress-info">
+            <span id="prog-txt">0% bajarildi</span>
+            <span id="count-txt">0 / 44</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="prog-fill"></div>
+        </div>
+    </div>
+
+    <div id="admin-panel">
+        <div class="admin-title">🔑 Admin — Kalitlar Kiritish</div>
+        <div class="admin-field">
+            <label class="admin-label">Test formati:</label>
+            <select id="admin-type" class="admin-select" onchange="onAdminTypeChange()">
+                <option value="rash">RASH (Milliy Sertifikat — Yopiq + Yozma)</option>
+                <option value="dtm">DTM (Standart A, B, C, D)</option>
+            </select>
+        </div>
+        <div class="admin-field">
+            <label class="admin-label">Savollar soni:</label>
+            <input type="number" id="admin-count" class="admin-input" value="44" min="1" max="200">
+            <div class="preset-row">
+                <button type="button" class="preset-btn" onclick="setAdminPreset(44, 'rash')">44 ta (Milliy)</button>
+                <button type="button" class="preset-btn" onclick="setAdminPreset(30, 'dtm')">30 ta (DTM)</button>
+                <button type="button" class="preset-btn" onclick="setAdminPreset(35, 'rash')">35 ta</button>
+            </div>
+        </div>
+        <button class="admin-btn" onclick="startAdmin()">Kalitlarni Belgilashga O'tish</button>
+    </div>
+
+    <div id="container"></div>
+
+    <div class="footer">
+        <button id="submitBtn" onclick="sendData()">✅ YAKUNLASH VA YUBORISH</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || 'user';
+        const testCode = urlParams.get('code') || 'default';
+        const countParam = parseInt(urlParams.get('count')) || 44;
+        let testType = (urlParams.get('type') || '').toLowerCase();
+
+        if (!testType) {
+            testType = countParam === 44 ? 'rash' : 'dtm';
+        }
+
+        let answers = [];
+        let totalQuestions = countParam;
+        let showOnlyUnanswered = false;
+        let activeInput = null;
+
+        const container = document.getElementById('container');
+        const adminPanel = document.getElementById('admin-panel');
+        const headerBar = document.getElementById('header-bar');
+        const submitBtn = document.getElementById('submitBtn');
+        const modeBadge = document.getElementById('mode-badge');
+        const filterBtn = document.getElementById('filter-btn');
+
+        function storageKey() {
+            return `lochin_math_${mode}_${testCode}_${totalQuestions}_${testType}`;
+        }
+
+        function saveDraft() {
+            try {
+                localStorage.setItem(storageKey(), JSON.stringify(answers));
+            } catch (e) {}
+        }
+
+        function loadDraft() {
+            try {
+                const raw = localStorage.getItem(storageKey());
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length === totalQuestions) {
+                    return parsed;
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function clearDraft() {
+            try {
+                localStorage.removeItem(storageKey());
+            } catch (e) {}
+        }
+
+        if (mode === 'admin') {
+            headerBar.classList.add('hidden');
+            adminPanel.style.display = 'block';
+            document.getElementById('admin-type').value = testType === 'dtm' ? 'dtm' : 'rash';
+            document.getElementById('admin-count').value = testType === 'dtm' ? 30 : 44;
+        } else {
+            initTest(countParam, testType);
+        }
+
+        function setAdminPreset(cnt, type) {
+            document.getElementById('admin-count').value = cnt;
+            document.getElementById('admin-type').value = type;
+        }
+
+        function onAdminTypeChange() {
+            const t = document.getElementById('admin-type').value;
+            document.getElementById('admin-count').value = (t === 'rash') ? 44 : 30;
+        }
+
+        function startAdmin() {
+            const val = parseInt(document.getElementById('admin-count').value);
+            const selectedType = document.getElementById('admin-type').value;
+            if (val > 0 && val <= 200) {
+                testType = selectedType;
+                adminPanel.style.display = 'none';
+                headerBar.classList.remove('hidden');
+                initTest(val, selectedType);
+            } else {
+                tg.showAlert("Savollar sonini to'g'ri kiriting (1 - 200)!");
+            }
+        }
+
+        function cleanVal(val) {
+            if (!val) return '';
+            return val.toString().toUpperCase().replace(/,/g, '.').trim();
+        }
+
+        function initTest(n, type) {
+            totalQuestions = n;
+            testType = type;
+            modeBadge.innerText = mode === 'admin' ? `ADMIN (${type.toUpperCase()})` : type.toUpperCase();
+            submitBtn.innerText = mode === 'admin' ? "🔑 KALITLARNI SAQLASH" : "✅ YAKUNLASH VA YUBORISH";
+
+            const saved = loadDraft();
+            answers = saved ? saved : new Array(n).fill(null);
+
+            submitBtn.style.display = 'block';
+            container.innerHTML = '';
+
+            for (let i = 1; i <= n; i++) {
+                if (type === 'rash') {
+                    if (i === 1) addSectionDivider("1–32: Yopiq testlar (A, B, C, D)");
+                    else if (i === 33) addSectionDivider("33–35: Moslashtirish testlari (A–F)");
+                    else if (i === 36) addSectionDivider("36–39: Yozma ochiq savollar");
+                    else if (i === 40) addSectionDivider("40–44: Ikki qismli masalalar (a va b)");
+                }
+
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.id = `q-card-${i}`;
+
+                const numBox = document.createElement('div');
+                numBox.className = 'q-num';
+                numBox.innerText = i;
+
+                const content = document.createElement('div');
+                content.className = 'content-area';
+
+                if (type === 'rash') {
+                    if (i <= 32) renderOptions(i, ['A', 'B', 'C', 'D'], content, card);
+                    else if (i <= 35) renderOptions(i, ['A', 'B', 'C', 'D', 'E', 'F'], content, card);
+                    else if (i <= 39) renderSingleInput(i, content, card);
+                    else if (i <= 44) renderDoubleInput(i, content, card);
+                    else renderSingleInput(i, content, card);
+                } else {
+                    renderOptions(i, ['A', 'B', 'C', 'D'], content, card);
+                }
+
+                card.appendChild(numBox);
+                card.appendChild(content);
+                container.appendChild(card);
+            }
+
+            updateUI();
+        }
+
+        function addSectionDivider(title) {
+            const div = document.createElement('div');
+            div.className = 'section-divider';
+            div.innerText = title;
+            container.appendChild(div);
+        }
+
+        function renderOptions(idx, opts, parent, card) {
+            const div = document.createElement('div');
+            div.className = 'options';
+            const currentAns = answers[idx - 1];
+
+            opts.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn' + (currentAns === opt ? ' selected' : '');
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+                    if (answers[idx - 1] === opt) {
+                        // Qayta bosganda tanlovni bekor qilish imkoniyati
+                        btn.classList.remove('selected');
+                        answers[idx - 1] = null;
+                    } else {
+                        Array.from(div.children).forEach(c => c.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        answers[idx - 1] = opt;
+                    }
+                    card.classList.remove('highlight-missing');
+                    saveDraft();
+                    updateUI();
+                };
+                div.appendChild(btn);
+            });
+            parent.appendChild(div);
+        }
+
+        function createMathHelper(inputsList, triggerUpdate) {
+            const bar = document.createElement('div');
+            bar.className = 'math-helper';
+            const symbols = ['-', '.', '/', '√', 'π'];
+            symbols.forEach(sym => {
+                const k = document.createElement('button');
+                k.type = 'button';
+                k.className = 'math-key';
+                k.innerText = sym;
+                k.onclick = (e) => {
+                    e.preventDefault();
+                    const target = (activeInput && inputsList.includes(activeInput)) ? activeInput : inputsList[0];
+                    target.focus();
+                    const start = target.selectionStart || target.value.length;
+                    const end = target.selectionEnd || target.value.length;
+                    target.value = target.value.substring(0, start) + sym + target.value.substring(end);
+                    target.setSelectionRange(start + sym.length, start + sym.length);
+                    triggerUpdate();
+                };
+                bar.appendChild(k);
+            });
+            return bar;
+        }
+
+        function renderSingleInput(idx, parent, card) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'input-wrapper';
+
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.className = 'text-input';
+            inp.placeholder = 'Javobni yozing';
+            inp.value = answers[idx - 1] || '';
+
+            const update = () => {
+                const val = cleanVal(inp.value);
+                answers[idx - 1] = val.length > 0 ? val : null;
+                card.classList.remove('highlight-missing');
+                saveDraft();
+                updateUI();
+            };
+
+            inp.onfocus = () => { activeInput = inp; };
+            inp.oninput = update;
+
+            wrapper.appendChild(inp);
+            wrapper.appendChild(createMathHelper([inp], update));
+            parent.appendChild(wrapper);
+        }
+
+        function renderDoubleInput(idx, parent, card) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'input-wrapper';
+
+            const dbl = document.createElement('div');
+            dbl.className = 'double-container';
+
+            let initA = '', initB = '';
+            if (answers[idx - 1] && answers[idx - 1].includes('|')) {
+                const parts = answers[idx - 1].split('|');
+                initA = parts[0] || '';
+                initB = parts[1] || '';
+            }
+
+            const rowA = document.createElement('div');
+            rowA.className = 'double-row';
+            rowA.innerHTML = `<span class="double-label">a)</span>`;
+            const inpA = document.createElement('input');
+            inpA.type = 'text';
+            inpA.className = 'text-input';
+            inpA.placeholder = 'a) javob';
+            inpA.value = initA;
+            rowA.appendChild(inpA);
+
+            const rowB = document.createElement('div');
+            rowB.className = 'double-row';
+            rowB.innerHTML = `<span class="double-label">b)</span>`;
+            const inpB = document.createElement('input');
+            inpB.type = 'text';
+            inpB.className = 'text-input';
+            inpB.placeholder = 'b) javob';
+            inpB.value = initB;
+            rowB.appendChild(inpB);
+
+            dbl.appendChild(rowA);
+            dbl.appendChild(rowB);
+
+            const update = () => {
+                const vA = cleanVal(inpA.value);
+                const vB = cleanVal(inpB.value);
+                if (vA && vB) {
+                    answers[idx - 1] = `${vA}|${vB}`;
+                } else if (vA || vB) {
+                    answers[idx - 1] = `${vA}|${vB}`;
+                } else {
+                    answers[idx - 1] = null;
+                }
+                card.classList.remove('highlight-missing');
+                saveDraft();
+                updateUI();
+            };
+
+            inpA.onfocus = () => { activeInput = inpA; };
+            inpB.onfocus = () => { activeInput = inpB; };
+            inpA.oninput = update;
+            inpB.oninput = update;
+
+            wrapper.appendChild(dbl);
+            wrapper.appendChild(createMathHelper([inpA, inpB], update));
+            parent.appendChild(wrapper);
+        }
+
+        function isQuestionComplete(ans) {
+            if (!ans) return false;
+            if (ans.includes('|')) {
+                const parts = ans.split('|');
+                return parts.length === 2 && parts[0].trim().length > 0 && parts[1].trim().length > 0;
+            }
+            return ans.trim().length > 0;
+        }
+
+        function updateUI() {
+            let solved = 0;
+            for (let i = 1; i <= totalQuestions; i++) {
+                const complete = isQuestionComplete(answers[i - 1]);
+                if (complete) solved++;
+                const card = document.getElementById(`q-card-${i}`);
+                if (card) {
+                    card.classList.toggle('answered', complete);
+                    if (showOnlyUnanswered) {
+                        card.classList.toggle('hidden', complete);
+                    } else {
+                        card.classList.remove('hidden');
+                    }
+                }
+            }
+
+            const pct = totalQuestions > 0 ? Math.round((solved / totalQuestions) * 100) : 0;
+            document.getElementById('prog-fill').style.width = `${pct}%`;
+            document.getElementById('prog-txt').innerText = `${pct}% bajarildi`;
+            document.getElementById('count-txt').innerText = `${solved} / ${totalQuestions}`;
+        }
+
+        function toggleFilterUnanswered() {
+            showOnlyUnanswered = !showOnlyUnanswered;
+            filterBtn.classList.toggle('active', showOnlyUnanswered);
+            filterBtn.innerText = showOnlyUnanswered ? "Barchasi" : "Qolganlar";
+            updateUI();
+        }
+
+        function clearAllAnswers() {
+            tg.showPopup({
+                title: "Tozalash",
+                message: "Barcha belgilangan javoblarni tozalab tashlamoqchimisiz?",
+                buttons: [
+                    { id: 'cancel', type: 'cancel', text: 'Bekor qilish' },
+                    { id: 'clear', type: 'destructive', text: 'Tozalash' }
+                ]
+            }, (btnId) => {
+                if (btnId === 'clear') {
+                    clearDraft();
+                    showOnlyUnanswered = false;
+                    filterBtn.classList.remove('active');
+                    filterBtn.innerText = "Qolganlar";
+                    initTest(totalQuestions, testType);
+                }
+            });
+        }
+
+        function sendData() {
+            const missing = [];
+            for (let i = 1; i <= totalQuestions; i++) {
+                if (!isQuestionComplete(answers[i - 1])) {
+                    missing.push(i);
+                }
+            }
+
+            if (missing.length > 0) {
+                const firstMissingCard = document.getElementById(`q-card-${missing[0]}`);
+                missing.forEach(num => {
+                    const c = document.getElementById(`q-card-${num}`);
+                    if (c) c.classList.add('highlight-missing');
+                });
+                if (firstMissingCard) {
+                    firstMissingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                const previewNums = missing.slice(0, 10).join(', ') + (missing.length > 10 ? '...' : '');
+                tg.showPopup({
+                    title: 'Belgilanmagan savollar bor!',
+                    message: `${missing.length} ta savol to'liq belgilanmagan (${previewNums}-savollar). Baribir yakunlaysizmi?`,
+                    buttons: [
+                        { id: 'cancel', type: 'default', text: 'Qaytib tekshirish' },
+                        { id: 'ok', type: 'destructive', text: 'Ha, yuborish' }
+                    ]
+                }, (btn) => {
+                    if (btn === 'ok') finalSend();
+                });
+            } else {
+                finalSend();
+            }
+        }
+
+        function finalSend() {
+            const data = answers.map(a => (a && a.trim()) ? a.trim() : "X");
+            clearDraft();
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+    </script>
+</body>
+</html>

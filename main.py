@@ -79,7 +79,7 @@ else:
     DB_FILE = "bot_database.db"
 
 WEB_APP_URL = os.environ.get(
-    "WEB_APP_URL", "https://kxanifa.github.io/test-bot-webapp"
+    "WEB_APP_URL", "https://kxanifa.github.io/lochin-math"
 ).rstrip("/")
 
 logging.basicConfig(
@@ -1077,7 +1077,7 @@ async def pdf_step(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
     web_type = "dtm" if data["test_type"] == "dtm" else "rash"
-    admin_webapp_url = f"{WEB_APP_URL}?mode=admin&type={web_type}"
+    admin_webapp_url = f"{WEB_APP_URL}/?mode=admin&type={web_type}&code={data['code']}"
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add(
@@ -1347,7 +1347,7 @@ async def enter_name(message: types.Message, state: FSMContext):
 
     q_count = len(test["keys"])
     web_type = "dtm" if test["type"] == "dtm" and q_count != 44 else "rash"
-    web_app_url = f"{WEB_APP_URL}?mode=user&count={q_count}&type={web_type}"
+    web_app_url = f"{WEB_APP_URL}/?mode=user&count={q_count}&type={web_type}&code={test['code']}"
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add(
@@ -1580,15 +1580,28 @@ async def handle_health_check(request):
     return web.Response(text="Lochin Math Bot is running healthy!")
 
 
+async def handle_webapp(request):
+    html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
+    if os.path.exists(html_path):
+        return web.FileResponse(html_path)
+    return web.Response(text="WebApp index.html not found", status=404)
+
+
 async def on_startup_webhook(dispatcher):
     db_start()
     webhook_host = get_webhook_host()
+    if not webhook_host:
+        logging.warning("WEBHOOK_HOST topilmadi! Serverda RAILWAY_PUBLIC_DOMAIN yoki WEBHOOK_HOST o'rnating.")
+        return
     webhook_url = f"{webhook_host}{WEBHOOK_PATH}"
     logging.info(f"Setting webhook to: {webhook_url}")
     try:
         current_info = await bot.get_webhook_info()
         if current_info.url != webhook_url:
             await bot.set_webhook(webhook_url, drop_pending_updates=False)
+            logging.info(f"Webhook successfully set to: {webhook_url}")
+        else:
+            logging.info(f"Webhook is already set to: {webhook_url}")
     except Exception as e:
         logging.error(f"Error setting webhook: {e}")
 
@@ -1607,14 +1620,29 @@ async def on_shutdown(dispatcher):
 
 
 if __name__ == "__main__":
-    webhook_host = get_webhook_host()
-    use_polling = os.environ.get("USE_POLLING", "").lower() in ("true", "1", "yes")
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-    if webhook_host and not use_polling:
+    use_polling = os.environ.get("USE_POLLING", "false").lower() in ("true", "1", "yes")
+
+    if use_polling:
+        logging.info("Starting bot in POLLING mode...")
+        executor.start_polling(
+            dp,
+            on_startup=on_startup_polling,
+            on_shutdown=on_shutdown,
+            skip_updates=True,
+            loop=loop,
+        )
+    else:
         logging.info("Starting bot in WEBHOOK mode (High-Load)...")
         app = web.Application()
         app.router.add_get("/", handle_health_check)
         app.router.add_get("/health", handle_health_check)
+        app.router.add_get("/webapp", handle_webapp)
 
         from aiogram.utils.executor import set_webhook
 
@@ -1625,14 +1653,7 @@ if __name__ == "__main__":
             on_shutdown=on_shutdown,
             skip_updates=False,
             web_app=app,
+            loop=loop,
         )
         port = int(os.environ.get("PORT", 8080))
         executor_instance.run_app(host="0.0.0.0", port=port)
-    else:
-        logging.info("Starting bot in POLLING mode...")
-        executor.start_polling(
-            dp,
-            on_startup=on_startup_polling,
-            on_shutdown=on_shutdown,
-            skip_updates=True,
-        )
