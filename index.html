@@ -423,7 +423,7 @@
         </div>
         <div class="progress-info">
             <span id="prog-txt">0% bajarildi</span>
-            <span id="count-txt">0 / 44</span>
+            <span id="count-txt">0 / 45</span>
         </div>
         <div class="progress-bar">
             <div class="progress-fill" id="prog-fill"></div>
@@ -435,15 +435,15 @@
         <div class="admin-field">
             <label class="admin-label">Test formati:</label>
             <select id="admin-type" class="admin-select" onchange="onAdminTypeChange()">
-                <option value="rash">RASH (Milliy Sertifikat — Yopiq + Yozma)</option>
+                <option value="rash">RASH (Milliy Sertifikat — 45 talik)</option>
                 <option value="dtm">DTM (Standart A, B, C, D)</option>
             </select>
         </div>
         <div class="admin-field">
             <label class="admin-label">Savollar soni:</label>
-            <input type="number" id="admin-count" class="admin-input" value="44" min="1" max="200">
+            <input type="number" id="admin-count" class="admin-input" value="45" min="1" max="200">
             <div class="preset-row">
-                <button type="button" class="preset-btn" onclick="setAdminPreset(44, 'rash')">44 ta (Milliy)</button>
+                <button type="button" class="preset-btn" onclick="setAdminPreset(45, 'rash')">45 ta (Milliy)</button>
                 <button type="button" class="preset-btn" onclick="setAdminPreset(30, 'dtm')">30 ta (DTM)</button>
                 <button type="button" class="preset-btn" onclick="setAdminPreset(35, 'rash')">35 ta</button>
             </div>
@@ -465,11 +465,11 @@
         const urlParams = new URLSearchParams(window.location.search);
         const mode = urlParams.get('mode') || 'user';
         const testCode = urlParams.get('code') || 'default';
-        const countParam = parseInt(urlParams.get('count')) || 44;
+        const countParam = parseInt(urlParams.get('count')) || 45;
         let testType = (urlParams.get('type') || '').toLowerCase();
 
         if (!testType) {
-            testType = countParam === 44 ? 'rash' : 'dtm';
+            testType = (countParam === 45 || countParam === 44) ? 'rash' : 'dtm';
         }
 
         let answers = [];
@@ -516,7 +516,7 @@
             headerBar.classList.add('hidden');
             adminPanel.style.display = 'block';
             document.getElementById('admin-type').value = testType === 'dtm' ? 'dtm' : 'rash';
-            document.getElementById('admin-count').value = testType === 'dtm' ? 30 : 44;
+            document.getElementById('admin-count').value = testType === 'dtm' ? 30 : 45;
         } else {
             initTest(countParam, testType);
         }
@@ -528,7 +528,7 @@
 
         function onAdminTypeChange() {
             const t = document.getElementById('admin-type').value;
-            document.getElementById('admin-count').value = (t === 'rash') ? 44 : 30;
+            document.getElementById('admin-count').value = (t === 'rash') ? 45 : 30;
         }
 
         function startAdmin() {
@@ -565,8 +565,7 @@
                 if (type === 'rash') {
                     if (i === 1) addSectionDivider("1–32: Yopiq testlar (A, B, C, D)");
                     else if (i === 33) addSectionDivider("33–35: Moslashtirish testlari (A–F)");
-                    else if (i === 36) addSectionDivider("36–39: Yozma ochiq savollar");
-                    else if (i === 40) addSectionDivider("40–44: Ikki qismli masalalar (a va b)");
+                    else if (i === 36) addSectionDivider("36–45: Ikki qismli yozma masalalar (a va b)");
                 }
 
                 const card = document.createElement('div');
@@ -583,8 +582,7 @@
                 if (type === 'rash') {
                     if (i <= 32) renderOptions(i, ['A', 'B', 'C', 'D'], content, card);
                     else if (i <= 35) renderOptions(i, ['A', 'B', 'C', 'D', 'E', 'F'], content, card);
-                    else if (i <= 39) renderSingleInput(i, content, card);
-                    else if (i <= 44) renderDoubleInput(i, content, card);
+                    else if (i <= 45) renderDoubleInput(i, content, card);
                     else renderSingleInput(i, content, card);
                 } else {
                     renderOptions(i, ['A', 'B', 'C', 'D'], content, card);

@@ -1371,7 +1371,7 @@ async def enter_name(message: types.Message, state: FSMContext):
         )
 
     q_count = len(test["keys"])
-    web_type = "dtm" if test["type"] == "dtm" and q_count != 44 else "rash"
+    web_type = "dtm" if test["type"] == "dtm" and q_count not in (44, 45) else "rash"
     web_app_url = f"{WEB_APP_URL}/?mode=user&count={q_count}&type={web_type}&code={test['code']}"
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
