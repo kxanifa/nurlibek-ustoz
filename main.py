@@ -78,7 +78,7 @@ load_env_file()
 API_TOKEN = (
     os.environ.get("BOT_TOKEN")
     or os.environ.get("TELEGRAM_BOT_TOKEN")
-    or "7058354398:AAFmuKIJ2N3gvpqm6EYeyQVxukYk6UTDBiM"
+    or "8621323950:AAFbJ9rOXRvMvwmQqVGngEYY2es53agBwvg"
 )
 
 ADMINS_ENV = os.environ.get("ADMINS")
@@ -98,9 +98,24 @@ elif os.environ.get("DATA_DIR") and os.path.exists(os.environ.get("DATA_DIR")):
 else:
     DB_FILE = "bot_database.db"
 
-WEB_APP_URL = os.environ.get(
-    "WEB_APP_URL", "https://kxanifa.github.io/lochin-math"
-).rstrip("/")
+WEB_APP_URL_ENV = os.environ.get("WEB_APP_URL", "").strip().rstrip("/")
+
+
+def get_webapp_url() -> str:
+    if WEB_APP_URL_ENV and "lochin-math" not in WEB_APP_URL_ENV:
+        return WEB_APP_URL_ENV
+    host = (
+        os.environ.get("WEBHOOK_HOST")
+        or os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+        or os.environ.get("RAILWAY_STATIC_URL")
+        or os.environ.get("RENDER_EXTERNAL_URL")
+    )
+    if host:
+        host = host.strip().rstrip("/")
+        if not host.startswith("http://") and not host.startswith("https://"):
+            host = f"https://{host}"
+        return f"{host}/webapp"
+    return WEB_APP_URL_ENV or "https://kxanifa.github.io/nurlibek-ustoz"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -493,33 +508,48 @@ def get_all_test_codes():
         return [r["code"] for r in cur.fetchall()]
 
 
-# ================= 2. MATEMATIK VA MANTIQIY HISOBLASH (RASH + DTM) =================
+# ================= 2. TARIX, HUQUQ VA DTM HISOBLASH (RASH + DTM) =================
 def normalize_answer(val) -> str:
     """
     Javob va kalitlarni yagona standart formatga keltiradi:
-    - 'a)5b)10', 'a) 5 b) 10', 'a:5;b:10', '5|10' -> '5|10'
+    - 'a)Kapetinglar b)Burbonlar', 'a:5;b:10', '5|10' -> 'KAPETINGLAR|BURBONLAR'
+    - O'zbekcha tutuq belgilari va apostroflarni (' ‘ ’ ` ʻ ʼ) yagona ' belgisiga keltiradi
     - '2,5' -> '2.5' (o'nli kasrlar)
     - Bo'shliqlar va kichik harflarni tozalaydi
     """
     if val is None:
         return "X"
-    s = str(val).strip().upper()
-    if not s or s == "X":
+    s = str(val).strip()
+    if not s or s.upper() == "X":
         return "X"
+
+    # Barcha turdagi apostrof / o' / g' belgilarini yagona ' ga keltirish
+    s = re.sub(r"[‘’`ʻʼ´]", "'", s)
+    s = s.upper()
 
     # O'nli kasrlarda vergulni nuqtaga almashtirish (masalan: 2,5 -> 2.5)
     s = re.sub(r"(\d),(\d)", r"\1.\2", s)
 
     # 'A)...B)...' formatini '...|...' formatiga o'girish (admin matn orqali kiritganda)
     ab_match = re.match(
-        r"^A[\)\.\:\-]?\s*(.+?)\s*[,;]?\s*B[\)\.\:\-]?\s*(.+)$",
+        r"^A[\)\.\:\-]\s*(.+?)\s*[,;]?\s*(?:\s+|^)B[\)\.\:\-]\s*(.+)$",
         s,
         flags=re.IGNORECASE,
     )
+    if not ab_match:
+        ab_match = re.match(
+            r"^A[\)\.\:\-]\s*(.+?)\s*B[\)\.\:\-]\s*(.+)$",
+            s,
+            flags=re.IGNORECASE,
+        )
     if ab_match:
         part_a = ab_match.group(1).replace(" ", "").strip()
         part_b = ab_match.group(2).replace(" ", "").strip()
         return f"{part_a}|{part_b}"
+
+    if "|" in s:
+        parts = [p.replace(" ", "").strip() for p in s.split("|")]
+        return "|".join(parts)
 
     s = s.replace(" ", "")
     return s if s else "X"
@@ -528,34 +558,119 @@ def normalize_answer(val) -> str:
 def parse_raw_keys(keys_raw: str) -> list:
     """
     Admin matn yoki TXT fayl yuborganda kalitlarni aqlli ajratib oladi.
-    Masalan:
-    - 'A B C D ... a)5b)10'
-    - '1.A 2.B 3.C ... 40.a)5b)10'
+    Tarix (a/b ikki qismli ko'p so'zli javoblar), Huquq (1 qismli yozma javoblar) va DTM uchun moslangan:
+    - Ketma-ket raqamlangan: '1.A 2.B ... 36. a) Kapetinglar b) Burbonlar' yoki '36. 1 yil'
     - Har qatorda bittadan yozilgan kalitlar
+    - Bo'shliq bilan ajratilgan kalitlar: 'A B C D ...'
     """
-    # Agar 'a) 5 b) 10' bo'shliq bilan yozilgan bo'lsa, ularni birlashtiramiz
+    text = keys_raw.replace("\r\n", "\n").replace("\r", "\n").strip()
+    if not text:
+        return []
+
+    # 1) Agar ketma-ket raqamlangan bo'lsa (1. ... 2. ... 3. ...), savol raqamlari bo'yicha ajratamiz
+    if re.match(r"^\s*1[\.\)\-\:]", text) and re.search(r"(?:^|\s)2[\.\)\-\:]", text):
+        items = []
+        current_q = 1
+        pos = 0
+        m1 = re.match(r"^\s*1[\.\)\-\:]\s*", text)
+        if m1:
+            pos = m1.end()
+            while True:
+                next_q = current_q + 1
+                # Avval aynan keyingi tartib raqamini (next_q) qidiramiz
+                pattern = re.compile(rf"(?:^|\n|\s+){next_q}[\.\)\-\:]\s*")
+                m_next = pattern.search(text, pos)
+                if m_next:
+                    chunk = text[pos : m_next.start()].strip()
+                    items.append(normalize_answer(chunk))
+                    pos = m_next.end()
+                    current_q = next_q
+                else:
+                    # Agar orada raqam tashlab ketilgan bo'lsa (masalan testda 1, 2, 3, 36):
+                    m_jump = re.search(
+                        r"(?:^|\n|\s+)(\d+)(?:[\)\:]\s*|\.\s+|\.(?=[A-Za-z]))",
+                        text[pos:],
+                    )
+                    if m_jump and int(m_jump.group(1)) > current_q:
+                        chunk = text[pos : pos + m_jump.start()].strip()
+                        items.append(normalize_answer(chunk))
+                        current_q = int(m_jump.group(1))
+                        pos = pos + m_jump.end()
+                    else:
+                        chunk = text[pos:].strip()
+                        if chunk:
+                            items.append(normalize_answer(chunk))
+                        break
+            if len(items) >= 2:
+                return items
+
+    # 2) Agar ko'p qatorli ro'yxat bo'lsa (har bir qatorda 1 tadan javob)
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+    if len(lines) >= 5:
+        multi_token_abcd = sum(
+            1 for ln in lines if re.match(r"^[A-Fa-f](\s+[A-Fa-f]){2,}$", ln)
+        )
+        if multi_token_abcd == 0:
+            parsed_lines = []
+            for idx, ln in enumerate(lines, 1):
+                m_num = re.match(rf"^{idx}[\.\)\-\:]\s*(.+)$", ln) or re.match(
+                    r"^\d+[\.\)\-\:]\s*(.+)$", ln
+                )
+                if m_num:
+                    ln = m_num.group(1).strip()
+                parsed_lines.append(normalize_answer(ln))
+            return parsed_lines
+
+    # 3) Oddiy bo'shliq bilan yozilgan format
     cleaned = re.sub(
         r"([aA][\)\.\:])\s*([^\s]+)\s+([bB][\)\.\:])\s*([^\s]+)",
         r"\1\2\3\4",
-        keys_raw,
+        text,
     )
-    tokens = [tok.strip() for tok in cleaned.replace("\r", "\n").split() if tok.strip()]
+    tokens = [tok.strip() for tok in cleaned.split() if tok.strip()]
     is_numbered_list = len(tokens) >= 2 and bool(
         re.match(r"^1[\.\)\-\:]", tokens[0]) and re.match(r"^2[\.\)\-\:]", tokens[1])
     )
     parsed = []
     for idx, t in enumerate(tokens, 1):
-        # 1) Agar ro'yxat ketma-ket raqamlangan bo'lsa (1.A 2.B ... 36.12,5), mos savol raqamini olib tashlaymiz
         if is_numbered_list:
             m_seq = re.match(rf"^{idx}[\.\)\-\:](.+)$", t)
             if m_seq:
                 t = m_seq.group(1)
-        # 2) Harfli javob oldidagi raqam ('1.A', '12)B') yoki ')' / ':' bilan ajratilgan raqam ('36)12.5')
         m_gen = re.match(r"^\d+(?:[\)\:](.+)|[\.\-]([A-Za-z].*))$", t)
         if m_gen:
             t = m_gen.group(1) or m_gen.group(2)
         parsed.append(normalize_answer(t))
     return parsed
+
+
+def _match_atomic_answer(u_part: str, k_part: str) -> bool:
+    u = normalize_answer(u_part)
+    k = normalize_answer(k_part)
+    if u == "X" or k == "X":
+        return False
+
+    # Agar admin bir nechta muqobil to'g'ri javob kiritgan bo'lsa (masalan: '300;300KUN')
+    if ";" in k:
+        return any(_match_atomic_answer(u, alt) for alt in k.split(";") if alt.strip())
+
+    if u == k:
+        return True
+
+    # Apostrof va tinish belgilarisiz solishtirish (masalan: TUG'LUQ == TUGLUQ, % belgisiz: 5% == 5)
+    u_clean = re.sub(r"['\-\.,%]", "", u)
+    k_clean = re.sub(r"['\-\.,%]", "", k)
+    if u_clean and u_clean == k_clean:
+        return True
+
+    # Sonli javoblarni aniq solishtirish (masalan 5.0 == 5)
+    try:
+        if float(u.rstrip("%")) == float(k.rstrip("%")):
+            return True
+    except ValueError:
+        pass
+
+    return False
 
 
 def check_single_answer(user_val, key_val) -> bool:
@@ -571,17 +686,59 @@ def check_single_answer(user_val, key_val) -> bool:
         k_parts = [p.strip() for p in k.split("|")]
         if len(u_parts) != len(k_parts):
             return False
-        # a) va b) o'z joyida mos kelishi kerak
-        return u_parts == k_parts
+        return all(_match_atomic_answer(up, kp) for up, kp in zip(u_parts, k_parts))
 
-    # Sonli javoblarni aniq solishtirish (masalan 5.0 == 5)
-    try:
-        if float(u) == float(k):
-            return True
-    except ValueError:
-        pass
+    return _match_atomic_answer(u, k)
 
-    return u == k
+
+def build_webapp_schema(keys: list, test_type: str):
+    """
+    Test kalitlari va test turiga qarab WebApp uchun aniq savol sxemasini ('4', '6', 'S', 'D')
+    hamda fan ko'rinishini ('tarix', 'huquq', 'dtm') avtomatik aniqlaydi.
+    """
+    t_type = (test_type or "rash").lower()
+    total = len(keys)
+    has_double = any("|" in str(k) for k in keys)
+    has_ef_33_35 = any(str(k) in ("E", "F") for k in keys[32:35])
+    has_written_after_35 = any(
+        str(k) not in ("A", "B", "C", "D", "E", "F") for k in keys[35:]
+    )
+
+    if t_type == "dtm" and not has_double and not has_written_after_35 and not has_ef_33_35:
+        web_type = "dtm"
+    elif t_type == "huquq":
+        web_type = "huquq"
+    elif t_type == "tarix":
+        web_type = "tarix"
+    else:
+        if has_double or has_ef_33_35:
+            web_type = "tarix"
+        elif has_written_after_35 or total in (44, 45):
+            web_type = "huquq" if not has_double else "tarix"
+        else:
+            web_type = "dtm"
+
+    schema_chars = []
+    for idx, k in enumerate(keys, 1):
+        ks = str(k)
+        if "|" in ks:
+            schema_chars.append("D")
+        elif web_type == "dtm":
+            schema_chars.append("4")
+        elif idx <= 32:
+            schema_chars.append("4")
+        elif 33 <= idx <= 35:
+            if web_type == "tarix" or ks in ("E", "F"):
+                schema_chars.append("6")
+            else:
+                schema_chars.append("4")
+        else:
+            if ks in ("A", "B", "C", "D") and not has_written_after_35 and not has_double:
+                schema_chars.append("4")
+            else:
+                schema_chars.append("S")
+
+    return web_type, "".join(schema_chars)
 
 
 def evaluate_vector(user_ans_list: list, correct_keys_list: list):
@@ -798,7 +955,7 @@ def generate_reports(test_code: str):
     styles = getSampleStyleSheet()
     elements = [
         Paragraph(
-            f"LOCHIN MATH — HISOBOT: {test_code} ({t_type.upper()}) | Jami: {len(sorted_results)} ta",
+            f"NURLIBEK — HISOBOT: {test_code} ({t_type.upper()}) | Jami: {len(sorted_results)} ta",
             styles["Title"],
         ),
         Spacer(1, 15),
@@ -920,8 +1077,9 @@ def kb_cancel():
 def kb_test_type():
     return (
         ReplyKeyboardMarkup(resize_keyboard=True)
-        .row("RASH (Milliy - 75 ball)", "DTM (Standart)")
-        .row("Fan 1 (Max 93 ball)", "Fan 2 (Max 63 ball)")
+        .row("🏛 Tarix (Milliy - 75 ball)", "⚖️ Huquq (Milliy - 75 ball)")
+        .row("📗 DTM (Standart)", "📊 RASH (Universal - 75 ball)")
+        .row("🥇 Fan 1 (Max 93 ball)", "🥈 Fan 2 (Max 63 ball)")
         .add("🔙 Bekor qilish")
     )
 
@@ -954,7 +1112,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
 
     if message.from_user.id in ADMINS:
         await message.answer(
-            f"👨‍💻 **Lochin Math — Admin panel** (ID: `{message.from_user.id}`):",
+            f"👨‍💻 **Nurlibek — Admin panel** (ID: `{message.from_user.id}`):",
             parse_mode="Markdown",
             reply_markup=kb_admin(),
         )
@@ -982,7 +1140,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
                 )
                 return
         await message.answer(
-            "🦅 **Lochin Math** test botiga xush kelibsiz!\nTest ishlash uchun quyidagi tugmani bosing:",
+            "🏛 **Nurlibek** test botiga xush kelibsiz!\nTest ishlash uchun quyidagi tugmani bosing:",
             parse_mode="Markdown",
             reply_markup=kb_user(),
         )
@@ -1015,7 +1173,7 @@ async def admin_stats_handler(message: types.Message):
     u_cnt, t_cnt, r_cnt = get_system_stats()
     chan = get_channel() or "Yo'q"
     txt = (
-        f"📈 **Lochin Math — Tizim Statistikasi:**\n\n"
+        f"📈 **Nurlibek — Tizim Statistikasi:**\n\n"
         f"👥 Jami foydalanuvchilar: **{u_cnt}** ta\n"
         f"📝 Jami yaratilgan testlar: **{t_cnt}** ta\n"
         f"✅ Jami yechilgan testlar: **{r_cnt}** ta\n"
@@ -1075,7 +1233,11 @@ async def code_step(message: types.Message, state: FSMContext):
 @dp.message_handler(state=AdminStates.waiting_type, user_id=ADMINS)
 async def type_step(message: types.Message, state: FSMContext):
     txt = message.text.upper()
-    if "FAN 1" in txt:
+    if "TARIX" in txt:
+        t_type = "tarix"
+    elif "HUQUQ" in txt:
+        t_type = "huquq"
+    elif "FAN 1" in txt:
         t_type = "fan1"
     elif "FAN 2" in txt:
         t_type = "fan2"
@@ -1101,8 +1263,14 @@ async def pdf_step(message: types.Message, state: FSMContext):
     await state.update_data(pdf=pdf_id)
     data = await state.get_data()
 
-    web_type = "dtm" if data["test_type"] == "dtm" else "rash"
-    admin_webapp_url = f"{WEB_APP_URL}/?mode=admin&type={web_type}&code={data['code']}"
+    t_type = data["test_type"]
+    if t_type == "dtm":
+        web_type = "dtm"
+    elif t_type == "huquq":
+        web_type = "huquq"
+    else:
+        web_type = "tarix"
+    admin_webapp_url = f"{get_webapp_url()}/?mode=admin&type={web_type}&code={data['code']}"
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add(
@@ -1115,10 +1283,11 @@ async def pdf_step(message: types.Message, state: FSMContext):
 
     await message.answer(
         "🔑 **Kalitlarni yuboring:**\n\n"
-        "1️⃣ Pastdagi **🔑 WebApp orqali kalit kiritish** tugmasini bosib belgilashingiz mumkin;\n"
+        "1️⃣ Pastdagi **🔑 WebApp orqali kalit kiritish** tugmasini bosib (Tarix / Huquq / DTM tanlab) belgilashingiz mumkin;\n"
         "2️⃣ Yoki oddiy matn / TXT fayl ko'rinishida yuborishingiz mumkin:\n"
         "• DTM uchun: `A B C D ...`\n"
-        "• Rash uchun: `A B ... a)5b)10` yoki `5|10`",
+        "• Huquq uchun: `1.A ... 35.C 36.300 37.1 ...`\n"
+        "• Tarix uchun: `1.A ... 36. a)Kapetinglar b)Burbonlar`",
         parse_mode="Markdown",
         reply_markup=kb,
     )
@@ -1371,8 +1540,11 @@ async def enter_name(message: types.Message, state: FSMContext):
         )
 
     q_count = len(test["keys"])
-    web_type = "dtm" if test["type"] == "dtm" and q_count not in (44, 45) else "rash"
-    web_app_url = f"{WEB_APP_URL}/?mode=user&count={q_count}&type={web_type}&code={test['code']}"
+    web_type, schema = build_webapp_schema(test["keys"], test["type"])
+    web_app_url = (
+        f"{get_webapp_url()}/?mode=user&count={q_count}"
+        f"&type={web_type}&code={test['code']}&schema={schema}"
+    )
 
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add(
@@ -1602,7 +1774,7 @@ def get_webhook_host():
 
 
 async def handle_health_check(request):
-    return web.Response(text="Lochin Math Bot is running healthy!")
+    return web.Response(text="Nurlibek Test Bot is running healthy!")
 
 
 async def handle_webapp(request):
@@ -1635,11 +1807,11 @@ async def on_startup_polling(dispatcher):
     db_start()
     with contextlib.suppress(Exception):
         await bot.delete_webhook(drop_pending_updates=True)
-    logging.info("Lochin Math Bot started in POLLING mode.")
+    logging.info("Nurlibek Bot started in POLLING mode.")
 
 
 async def on_shutdown(dispatcher):
-    logging.warning("Shutting down Lochin Math Bot...")
+    logging.warning("Shutting down Nurlibek Bot...")
     await dp.storage.close()
     await dp.storage.wait_closed()
 
@@ -1668,6 +1840,7 @@ if __name__ == "__main__":
         app.router.add_get("/", handle_health_check)
         app.router.add_get("/health", handle_health_check)
         app.router.add_get("/webapp", handle_webapp)
+        app.router.add_get("/webapp/", handle_webapp)
 
         from aiogram.utils.executor import set_webhook
 

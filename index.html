@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lochin Math — Test Tizimi</title>
+    <title>Nurlibek — Test Tizimi</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -55,6 +55,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 8px;
+            gap: 6px;
         }
 
         .brand {
@@ -65,6 +66,7 @@
             font-size: 15px;
             color: #0f172a;
             letter-spacing: 0.4px;
+            flex-shrink: 0;
         }
 
         .brand-badge {
@@ -79,7 +81,10 @@
 
         .header-actions {
             display: flex;
-            gap: 6px;
+            gap: 5px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .chip-btn {
@@ -126,7 +131,7 @@
         /* ADMIN PANEL */
         #admin-panel {
             max-width: 440px;
-            margin: 80px auto 20px;
+            margin: 60px auto 20px;
             padding: 24px 20px;
             background: #ffffff;
             border-radius: 20px;
@@ -158,7 +163,7 @@
         .admin-input, .admin-select {
             width: 100%;
             padding: 12px 14px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             border-radius: 12px;
             border: 2px solid #cbd5e1;
@@ -180,13 +185,30 @@
 
         .preset-btn {
             flex: 1;
-            padding: 8px;
+            padding: 9px 6px;
             border-radius: 8px;
             border: 1px solid #cbd5e1;
             background: #f1f5f9;
             font-weight: 700;
             font-size: 12px;
             cursor: pointer;
+            color: #0f172a;
+        }
+
+        .preset-btn:active {
+            background: #e2e8f0;
+        }
+
+        .admin-hint {
+            font-size: 12px;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            text-align: left;
+            line-height: 1.45;
         }
 
         .admin-btn {
@@ -267,6 +289,7 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
+            width: 100%;
         }
 
         .options {
@@ -309,6 +332,25 @@
             gap: 6px;
         }
 
+        .written-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .part-toggle-btn {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
         .text-input {
             width: 100%;
             padding: 10px 12px;
@@ -320,7 +362,7 @@
             background: #f8fafc;
             color: #0f172a;
             outline: none;
-            text-align: center;
+            text-align: left;
             transition: border-color 0.15s ease;
         }
 
@@ -355,6 +397,7 @@
             gap: 5px;
             justify-content: flex-end;
             flex-wrap: wrap;
+            margin-left: auto;
         }
 
         .math-key {
@@ -413,10 +456,11 @@
     <div class="header" id="header-bar">
         <div class="header-top">
             <div class="brand">
-                <span>🦅 LOCHIN MATH</span>
-                <span class="brand-badge" id="mode-badge">RASH</span>
+                <span>🏛 NURLIBEK</span>
+                <span class="brand-badge" id="mode-badge">TEST</span>
             </div>
             <div class="header-actions">
+                <button class="chip-btn hidden" id="subject-switch-btn" onclick="toggleSubjectLayout()">⚖️ Huquq / 🏛 Tarix</button>
                 <button class="chip-btn" id="filter-btn" onclick="toggleFilterUnanswered()">Qolganlar</button>
                 <button class="chip-btn" onclick="clearAllAnswers()">Tozalash</button>
             </div>
@@ -431,21 +475,25 @@
     </div>
 
     <div id="admin-panel">
-        <div class="admin-title">🔑 Admin — Kalitlar Kiritish</div>
+        <div class="admin-title">🔑 Nurlibek — Kalitlar Kiritish</div>
         <div class="admin-field">
-            <label class="admin-label">Test formati:</label>
+            <label class="admin-label">Fan va test formati:</label>
             <select id="admin-type" class="admin-select" onchange="onAdminTypeChange()">
-                <option value="rash">RASH (Milliy Sertifikat — 45 talik)</option>
-                <option value="dtm">DTM (Standart A, B, C, D)</option>
+                <option value="tarix">🏛 Tarix — Milliy Sertifikat (45 ta)</option>
+                <option value="huquq">⚖️ Huquq — Milliy Sertifikat (45 ta)</option>
+                <option value="dtm">📗 DTM — Standart test (A, B, C, D)</option>
             </select>
+        </div>
+        <div id="admin-format-hint" class="admin-hint">
+            <b>🏛 Tarix (45 ta):</b> 1–32 yopiq test (A–D), 33–35 moslashtirish (A–F), 36–45 ikki qismli yozma (a va b).
         </div>
         <div class="admin-field">
             <label class="admin-label">Savollar soni:</label>
             <input type="number" id="admin-count" class="admin-input" value="45" min="1" max="200">
             <div class="preset-row">
-                <button type="button" class="preset-btn" onclick="setAdminPreset(45, 'rash')">45 ta (Milliy)</button>
-                <button type="button" class="preset-btn" onclick="setAdminPreset(30, 'dtm')">30 ta (DTM)</button>
-                <button type="button" class="preset-btn" onclick="setAdminPreset(35, 'rash')">35 ta</button>
+                <button type="button" class="preset-btn" onclick="setAdminPreset(45, 'tarix')">🏛 45 ta (Tarix)</button>
+                <button type="button" class="preset-btn" onclick="setAdminPreset(45, 'huquq')">⚖️ 45 ta (Huquq)</button>
+                <button type="button" class="preset-btn" onclick="setAdminPreset(30, 'dtm')">📗 30 ta (DTM)</button>
             </div>
         </div>
         <button class="admin-btn" onclick="startAdmin()">Kalitlarni Belgilashga O'tish</button>
@@ -466,13 +514,25 @@
         const mode = urlParams.get('mode') || 'user';
         const testCode = urlParams.get('code') || 'default';
         const countParam = parseInt(urlParams.get('count')) || 45;
+        const schemaParam = (urlParams.get('schema') || '').trim().toUpperCase();
         let testType = (urlParams.get('type') || '').toLowerCase();
 
-        if (!testType) {
-            testType = (countParam === 45 || countParam === 44) ? 'rash' : 'dtm';
+        if (!testType || testType === 'rash' || testType === 'fan1' || testType === 'fan2') {
+            if (schemaParam) {
+                if (schemaParam.includes('D') || schemaParam.includes('6')) {
+                    testType = 'tarix';
+                } else if (schemaParam.includes('S')) {
+                    testType = 'huquq';
+                } else {
+                    testType = (countParam === 45 || countParam === 44) ? 'tarix' : 'dtm';
+                }
+            } else {
+                testType = (countParam === 45 || countParam === 44) ? 'tarix' : 'dtm';
+            }
         }
 
         let answers = [];
+        let questionKinds = []; // '4' (A-D), '6' (A-F), 'S' (Single input), 'D' (Double input a/b)
         let totalQuestions = countParam;
         let showOnlyUnanswered = false;
         let activeInput = null;
@@ -483,14 +543,18 @@
         const submitBtn = document.getElementById('submitBtn');
         const modeBadge = document.getElementById('mode-badge');
         const filterBtn = document.getElementById('filter-btn');
+        const subjectSwitchBtn = document.getElementById('subject-switch-btn');
 
         function storageKey() {
-            return `lochin_math_${mode}_${testCode}_${totalQuestions}_${testType}`;
+            return `nurlibek_${mode}_${testCode}_${totalQuestions}_${testType}`;
         }
 
         function saveDraft() {
             try {
-                localStorage.setItem(storageKey(), JSON.stringify(answers));
+                localStorage.setItem(storageKey(), JSON.stringify({
+                    answers: answers,
+                    kinds: questionKinds
+                }));
             } catch (e) {}
         }
 
@@ -500,6 +564,9 @@
                 if (!raw) return null;
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length === totalQuestions) {
+                    return { answers: parsed, kinds: null };
+                }
+                if (parsed && Array.isArray(parsed.answers) && parsed.answers.length === totalQuestions) {
                     return parsed;
                 }
             } catch (e) {}
@@ -512,23 +579,67 @@
             } catch (e) {}
         }
 
+        function updateAdminHint() {
+            const t = document.getElementById('admin-type').value;
+            const hint = document.getElementById('admin-format-hint');
+            if (t === 'tarix') {
+                hint.innerHTML = "<b>🏛 Tarix (Milliy Sertifikat):</b> 1–32 yopiq test (A–D), 33–35 moslashtirish (A–F), 36–45 ikki qismli yozma (a va b). <i>(Yozma savollarni 1 yoki 2 qismli qilib almashtirish ham mumkin)</i>";
+            } else if (t === 'huquq') {
+                hint.innerHTML = "<b>⚖️ Huquq (Milliy Sertifikat):</b> 1–32 yopiq test (A–D), 33–35 vaziyatli test (A–D), 36–45 bitta javobli yozma savollar. <i>(Yozma savollarni 1 yoki 2 qismli qilib almashtirish ham mumkin)</i>";
+            } else {
+                hint.innerHTML = "<b>📗 DTM (Standart):</b> Barcha savollar A, B, C, D variantli test ko'rinishida.";
+            }
+        }
+
+        function buildDefaultKinds(n, type, explicitSchema) {
+            const kinds = [];
+            for (let i = 1; i <= n; i++) {
+                if (explicitSchema && explicitSchema.length >= i) {
+                    const ch = explicitSchema[i - 1];
+                    if (ch === '4' || ch === '6' || ch === 'S' || ch === 'D') {
+                        kinds.push(ch);
+                        continue;
+                    }
+                }
+                if (type === 'tarix') {
+                    if (i <= 32) kinds.push('4');
+                    else if (i <= 35) kinds.push('6');
+                    else kinds.push('D');
+                } else if (type === 'huquq') {
+                    if (i <= 35) kinds.push('4');
+                    else kinds.push('S');
+                } else {
+                    kinds.push('4');
+                }
+            }
+            return kinds;
+        }
+
         if (mode === 'admin') {
             headerBar.classList.add('hidden');
             adminPanel.style.display = 'block';
-            document.getElementById('admin-type').value = testType === 'dtm' ? 'dtm' : 'rash';
-            document.getElementById('admin-count').value = testType === 'dtm' ? 30 : 45;
+            const initAdminType = (testType === 'dtm' || testType === 'huquq' || testType === 'tarix') ? testType : 'tarix';
+            document.getElementById('admin-type').value = initAdminType;
+            document.getElementById('admin-count').value = initAdminType === 'dtm' ? 30 : 45;
+            updateAdminHint();
         } else {
-            initTest(countParam, testType);
+            // Agar schema berilmagan bo'lsa va 45 talik test bo'lsa, foydalanuvchi ham Tarix/Huquq ko'rinishini almashtira olsin
+            if (!schemaParam && (countParam === 45 || countParam === 44) && testType !== 'dtm') {
+                subjectSwitchBtn.classList.remove('hidden');
+            }
+            initTest(countParam, testType, schemaParam);
         }
 
         function setAdminPreset(cnt, type) {
             document.getElementById('admin-count').value = cnt;
             document.getElementById('admin-type').value = type;
+            updateAdminHint();
         }
 
         function onAdminTypeChange() {
             const t = document.getElementById('admin-type').value;
-            document.getElementById('admin-count').value = (t === 'rash') ? 45 : 30;
+            document.getElementById('admin-count').value = (t === 'dtm') ? 30 : 45;
+            updateAdminHint();
         }
 
         function startAdmin() {
@@ -538,34 +649,99 @@
                 testType = selectedType;
                 adminPanel.style.display = 'none';
                 headerBar.classList.remove('hidden');
-                initTest(val, selectedType);
+                subjectSwitchBtn.classList.remove('hidden');
+                initTest(val, selectedType, '');
             } else {
                 tg.showAlert("Savollar sonini to'g'ri kiriting (1 - 200)!");
             }
         }
 
-        function cleanVal(val) {
-            if (!val) return '';
-            return val.toString().toUpperCase().replace(/,/g, '.').trim();
+        function toggleSubjectLayout() {
+            const nextType = (testType === 'tarix') ? 'huquq' : 'tarix';
+            testType = nextType;
+            questionKinds = buildDefaultKinds(totalQuestions, testType, '');
+            // Mavjud javoblarni saqlab qolgan holda qayta chizish
+            for (let i = 0; i < totalQuestions; i++) {
+                const k = questionKinds[i];
+                const ans = answers[i];
+                if (k === '4' && ans && !['A', 'B', 'C', 'D'].includes(ans)) {
+                    answers[i] = null;
+                } else if (k === '6' && ans && !['A', 'B', 'C', 'D', 'E', 'F'].includes(ans)) {
+                    answers[i] = null;
+                } else if (k === 'S' && ans && ans.includes('|')) {
+                    answers[i] = ans.split('|')[0] || null;
+                }
+            }
+            saveDraft();
+            renderAllCards();
+            updateUI();
         }
 
-        function initTest(n, type) {
+        function cleanVal(val) {
+            if (!val) return '';
+            return val
+                .toString()
+                .replace(/[‘’`ʻʼ]/g, "'")
+                .replace(/(\d),(\d)/g, '$1.$2')
+                .replace(/\|/g, ' ')
+                .replace(/\s+/g, ' ')
+                .toUpperCase()
+                .trim();
+        }
+
+        function formatBadgeText(type) {
+            const label = type === 'tarix' ? '🏛 TARIX' : (type === 'huquq' ? '⚖️ HUQUQ' : '📗 DTM');
+            return mode === 'admin' ? `ADMIN (${label})` : label;
+        }
+
+        function initTest(n, type, explicitSchema) {
             totalQuestions = n;
             testType = type;
-            modeBadge.innerText = mode === 'admin' ? `ADMIN (${type.toUpperCase()})` : type.toUpperCase();
             submitBtn.innerText = mode === 'admin' ? "🔑 KALITLARNI SAQLASH" : "✅ YAKUNLASH VA YUBORISH";
 
             const saved = loadDraft();
-            answers = saved ? saved : new Array(n).fill(null);
+            if (saved && saved.answers) {
+                answers = saved.answers;
+                if (!explicitSchema && Array.isArray(saved.kinds) && saved.kinds.length === n) {
+                    questionKinds = saved.kinds;
+                } else {
+                    questionKinds = buildDefaultKinds(n, type, explicitSchema);
+                }
+            } else {
+                answers = new Array(n).fill(null);
+                questionKinds = buildDefaultKinds(n, type, explicitSchema);
+            }
 
             submitBtn.style.display = 'block';
+            renderAllCards();
+            updateUI();
+        }
+
+        function renderAllCards() {
+            modeBadge.innerText = formatBadgeText(testType);
+            if (subjectSwitchBtn) {
+                subjectSwitchBtn.innerText = testType === 'tarix' ? "⚖️ Huquq formatga o'tish" : "🏛 Tarix formatga o'tish";
+            }
             container.innerHTML = '';
 
-            for (let i = 1; i <= n; i++) {
-                if (type === 'rash') {
-                    if (i === 1) addSectionDivider("1–32: Yopiq testlar (A, B, C, D)");
-                    else if (i === 33) addSectionDivider("33–35: Moslashtirish testlari (A–F)");
-                    else if (i === 36) addSectionDivider("36–45: Ikki qismli yozma masalalar (a va b)");
+            for (let i = 1; i <= totalQuestions; i++) {
+                const kind = questionKinds[i - 1];
+                const prevKind = i > 1 ? questionKinds[i - 2] : null;
+
+                if (testType !== 'dtm') {
+                    if (i === 1 && kind === '4') {
+                        addSectionDivider(testType === 'huquq' ? "1–32: Yopiq test savollari (A, B, C, D)" : "1–32: Yopiq test savollari (A, B, C, D)");
+                    } else if (i === 33 && kind === '6') {
+                        addSectionDivider("33–35: Moslashtirish testlari (A, B, C, D, E, F)");
+                    } else if (i === 33 && kind === '4' && testType === 'huquq') {
+                        addSectionDivider("33–35: Vaziyatli test savollari (A, B, C, D)");
+                    } else if ((kind === 'S' || kind === 'D') && prevKind !== 'S' && prevKind !== 'D') {
+                        addSectionDivider(
+                            kind === 'D'
+                                ? `${i}–${totalQuestions}: Ikki qismli yozma savollar (a va b)`
+                                : `${i}–${totalQuestions}: Yozma (ochiq) savollar`
+                        );
+                    }
                 }
 
                 const card = document.createElement('div');
@@ -579,20 +755,40 @@
                 const content = document.createElement('div');
                 content.className = 'content-area';
 
-                if (type === 'rash') {
-                    if (i <= 32) renderOptions(i, ['A', 'B', 'C', 'D'], content, card);
-                    else if (i <= 35) renderOptions(i, ['A', 'B', 'C', 'D', 'E', 'F'], content, card);
-                    else if (i <= 45) renderDoubleInput(i, content, card);
-                    else renderSingleInput(i, content, card);
-                } else {
-                    renderOptions(i, ['A', 'B', 'C', 'D'], content, card);
-                }
+                renderQuestionContent(i, kind, content, card);
 
                 card.appendChild(numBox);
                 card.appendChild(content);
                 container.appendChild(card);
             }
+        }
 
+        function renderQuestionContent(i, kind, content, card) {
+            content.innerHTML = '';
+            if (kind === '4') {
+                renderOptions(i, ['A', 'B', 'C', 'D'], content, card);
+            } else if (kind === '6') {
+                renderOptions(i, ['A', 'B', 'C', 'D', 'E', 'F'], content, card);
+            } else if (kind === 'D') {
+                renderDoubleInput(i, content, card);
+            } else {
+                renderSingleInput(i, content, card);
+            }
+        }
+
+        function toggleQuestionWrittenMode(idx, content, card) {
+            const currentKind = questionKinds[idx - 1];
+            const nextKind = currentKind === 'D' ? 'S' : 'D';
+            questionKinds[idx - 1] = nextKind;
+            const curAns = answers[idx - 1];
+            if (nextKind === 'S' && curAns && curAns.includes('|')) {
+                const firstPart = curAns.split('|')[0].trim();
+                answers[idx - 1] = firstPart || null;
+            } else if (nextKind === 'D' && curAns && !curAns.includes('|')) {
+                answers[idx - 1] = `${curAns}|`;
+            }
+            saveDraft();
+            renderQuestionContent(idx, nextKind, content, card);
             updateUI();
         }
 
@@ -615,7 +811,6 @@
                 btn.onclick = () => {
                     if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
                     if (answers[idx - 1] === opt) {
-                        // Qayta bosganda tanlovni bekor qilish imkoniyati
                         btn.classList.remove('selected');
                         answers[idx - 1] = null;
                     } else {
@@ -632,10 +827,26 @@
             parent.appendChild(div);
         }
 
-        function createMathHelper(inputsList, triggerUpdate) {
+        function createToolbar(idx, inputsList, triggerUpdate, content, card) {
+            const toolbar = document.createElement('div');
+            toolbar.className = 'written-toolbar';
+
+            if (mode === 'admin' || !schemaParam) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.type = 'button';
+                toggleBtn.className = 'part-toggle-btn';
+                const isDouble = questionKinds[idx - 1] === 'D';
+                toggleBtn.innerText = isDouble ? "⇄ 1 qismli qilish" : "⇄ 2 qismli (a, b) qilish";
+                toggleBtn.onclick = (e) => {
+                    e.preventDefault();
+                    toggleQuestionWrittenMode(idx, content, card);
+                };
+                toolbar.appendChild(toggleBtn);
+            }
+
             const bar = document.createElement('div');
             bar.className = 'math-helper';
-            const symbols = ['-', '.', '/', '√', 'π'];
+            const symbols = ["'", "O'", "G'", "-", "I", "V", "X"];
             symbols.forEach(sym => {
                 const k = document.createElement('button');
                 k.type = 'button';
@@ -645,15 +856,17 @@
                     e.preventDefault();
                     const target = (activeInput && inputsList.includes(activeInput)) ? activeInput : inputsList[0];
                     target.focus();
-                    const start = target.selectionStart || target.value.length;
-                    const end = target.selectionEnd || target.value.length;
+                    const start = target.selectionStart ?? target.value.length;
+                    const end = target.selectionEnd ?? target.value.length;
                     target.value = target.value.substring(0, start) + sym + target.value.substring(end);
                     target.setSelectionRange(start + sym.length, start + sym.length);
                     triggerUpdate();
                 };
                 bar.appendChild(k);
             });
-            return bar;
+
+            toolbar.appendChild(bar);
+            return toolbar;
         }
 
         function renderSingleInput(idx, parent, card) {
@@ -663,8 +876,8 @@
             const inp = document.createElement('input');
             inp.type = 'text';
             inp.className = 'text-input';
-            inp.placeholder = 'Javobni yozing';
-            inp.value = answers[idx - 1] || '';
+            inp.placeholder = 'Javobni yozing...';
+            inp.value = (answers[idx - 1] && !answers[idx - 1].includes('|')) ? answers[idx - 1] : '';
 
             const update = () => {
                 const val = cleanVal(inp.value);
@@ -678,7 +891,7 @@
             inp.oninput = update;
 
             wrapper.appendChild(inp);
-            wrapper.appendChild(createMathHelper([inp], update));
+            wrapper.appendChild(createToolbar(idx, [inp], update, parent, card));
             parent.appendChild(wrapper);
         }
 
@@ -690,10 +903,14 @@
             dbl.className = 'double-container';
 
             let initA = '', initB = '';
-            if (answers[idx - 1] && answers[idx - 1].includes('|')) {
-                const parts = answers[idx - 1].split('|');
-                initA = parts[0] || '';
-                initB = parts[1] || '';
+            if (answers[idx - 1]) {
+                if (answers[idx - 1].includes('|')) {
+                    const parts = answers[idx - 1].split('|');
+                    initA = parts[0] || '';
+                    initB = parts[1] || '';
+                } else {
+                    initA = answers[idx - 1];
+                }
             }
 
             const rowA = document.createElement('div');
@@ -702,7 +919,7 @@
             const inpA = document.createElement('input');
             inpA.type = 'text';
             inpA.className = 'text-input';
-            inpA.placeholder = 'a) javob';
+            inpA.placeholder = 'a) javobni yozing...';
             inpA.value = initA;
             rowA.appendChild(inpA);
 
@@ -712,7 +929,7 @@
             const inpB = document.createElement('input');
             inpB.type = 'text';
             inpB.className = 'text-input';
-            inpB.placeholder = 'b) javob';
+            inpB.placeholder = 'b) javobni yozing...';
             inpB.value = initB;
             rowB.appendChild(inpB);
 
@@ -722,9 +939,7 @@
             const update = () => {
                 const vA = cleanVal(inpA.value);
                 const vB = cleanVal(inpB.value);
-                if (vA && vB) {
-                    answers[idx - 1] = `${vA}|${vB}`;
-                } else if (vA || vB) {
+                if (vA || vB) {
                     answers[idx - 1] = `${vA}|${vB}`;
                 } else {
                     answers[idx - 1] = null;
@@ -740,13 +955,14 @@
             inpB.oninput = update;
 
             wrapper.appendChild(dbl);
-            wrapper.appendChild(createMathHelper([inpA, inpB], update));
+            wrapper.appendChild(createToolbar(idx, [inpA, inpB], update, parent, card));
             parent.appendChild(wrapper);
         }
 
-        function isQuestionComplete(ans) {
+        function isQuestionComplete(ans, idx) {
             if (!ans) return false;
-            if (ans.includes('|')) {
+            const kind = questionKinds[idx];
+            if (kind === 'D' || ans.includes('|')) {
                 const parts = ans.split('|');
                 return parts.length === 2 && parts[0].trim().length > 0 && parts[1].trim().length > 0;
             }
@@ -756,7 +972,7 @@
         function updateUI() {
             let solved = 0;
             for (let i = 1; i <= totalQuestions; i++) {
-                const complete = isQuestionComplete(answers[i - 1]);
+                const complete = isQuestionComplete(answers[i - 1], i - 1);
                 if (complete) solved++;
                 const card = document.getElementById(`q-card-${i}`);
                 if (card) {
@@ -796,7 +1012,7 @@
                     showOnlyUnanswered = false;
                     filterBtn.classList.remove('active');
                     filterBtn.innerText = "Qolganlar";
-                    initTest(totalQuestions, testType);
+                    initTest(totalQuestions, testType, schemaParam);
                 }
             });
         }
@@ -804,7 +1020,7 @@
         function sendData() {
             const missing = [];
             for (let i = 1; i <= totalQuestions; i++) {
-                if (!isQuestionComplete(answers[i - 1])) {
+                if (!isQuestionComplete(answers[i - 1], i - 1)) {
                     missing.push(i);
                 }
             }
@@ -844,4 +1060,3 @@
     </script>
 </body>
 </html>
-
