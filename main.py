@@ -86,9 +86,9 @@ if ADMINS_ENV:
     try:
         ADMINS = [int(x.strip()) for x in ADMINS_ENV.split(",") if x.strip()]
     except Exception:
-        ADMINS = [1486347042, 1033652624]
+        ADMINS = [1486347042, 1085303982, 1033652624]
 else:
-    ADMINS = [1486347042, 1033652624]
+    ADMINS = [1486347042, 1085303982, 1033652624]
 
 # Railway / Docker Volume tekshiruvi
 if os.path.exists("/app/data"):
